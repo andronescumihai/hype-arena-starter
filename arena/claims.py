@@ -432,7 +432,11 @@ def write_claims(k, n=1000, veto=None):
     ok.sort(key=lambda c: (-c["confidence"], order[c["type"]]))
     # keep variety: interleave types while confidence allows
     picked = ok[:n]
+    # stated confidence, calibrated on the back-test (python -m arena.backtest): history-based
+    # types never failed there; claims about 29 Oct 2026 can miss a change the Writer never saw
+    ceiling = {"change": 0.98, "relation": 0.97, "at_event": 0.97, "compare": 0.96, "fact": 0.95}
     for i, c in enumerate(picked):
         c["id"] = f"nn-{c['type']}-{i + 1}"
+        c["confidence"] = round(min(ceiling[c["type"]], c["confidence"] + 0.05), 3)
         c.pop("_tag", None)
     return picked, dict(dropped), len(cands)
