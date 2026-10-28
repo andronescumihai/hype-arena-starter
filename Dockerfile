@@ -7,7 +7,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY arena ./arena
 COPY data ./data
 COPY run.py .
+# the frontend: python /app/web/server.py serves web/dist and runs the system live
+COPY web/server.py ./web/server.py
+COPY web/dist ./web/dist
 # train the extractor statistics and the Judge's model at build time, from practice rows only
 RUN python -m arena.train && chmod -R a+rX /app
 USER 10001
+EXPOSE 8000
 CMD ["python", "/app/run.py"]
