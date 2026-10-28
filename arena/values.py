@@ -17,7 +17,7 @@ for t, v in TENS.items():
 WORDNUM.update({"a dozen": 12, "a hundred": 100, "one hundred": 100, "two hundred": 200, "three hundred": 300})
 
 _WN = "|".join(sorted((re.escape(w) for w in WORDNUM), key=len, reverse=True))
-NUM = rf"(?:\d{{1,3}}(?:,\d{{3}})+(?:\.\d+)?|\d+(?:\.\d+)?|(?:{_WN}))"
+NUM = rf"(?:(?<![\d.,])(?:\d{{1,3}}(?:,\d{{3}})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![,.]\d)|(?:{_WN}))"
 SCALE = r"(?:\s?(?:thousand|million|billion|bn|M|k)\b)?"
 SCALES = {"thousand": 1e3, "k": 1e3, "million": 1e6, "m": 1e6, "billion": 1e9, "bn": 1e9}
 
@@ -49,11 +49,13 @@ APPROX_BEFORE = re.compile(r"(?:about|around|approximately|approx\.?|roughly|nea
                            r"estimated|est\.?|close to|more or less|~|≈|±)\s*$", re.I)
 APPROX_AFTER = re.compile(r"^\s*(?:or so|give or take|-ish)", re.I)
 OPS_BEFORE = [
+    ("le", r"(?:no more than|not more than|up to|at most|maximum|max|within)"),
+    ("ge", r"(?:no less than|not less than|no fewer than|at least|minimum)"),
     ("gt", r"(?:over|more than|greater than|higher than|above|exceeding|in excess of|upwards of)"),
     ("lt", r"(?:under|less than|fewer than|lower than|below)"),
-    ("le", r"(?:up to|at most|no more than|not more than|maximum|max|within)"),
-    ("ge", r"(?:at least|no less than|not less than|no fewer than|minimum)"),
 ]
+DATE_OPS = [("le", r"(?:no later than|by)"), ("ge", r"(?:no earlier than)"), ("lt", r"(?:before|prior to)"),
+            ("gt", r"(?:after)")]
 OPS_AFTER = [("le", r"(?:or less|or fewer|or under|or below|or lower|or shorter)"),
              ("ge", r"(?:or more|or higher|or above|or longer|or over|\+)")]
 NOUN_STOP = {"of", "the", "a", "an", "and", "or", "to", "in", "on", "at", "for", "per", "with", "from", "by",
@@ -89,8 +91,13 @@ def singular(w):
     return w
 
 
-def _op(text, start, end):
+def _op(text, start, end, kind=None):
     before, after = text[max(0, start - 30):start], text[end:end + 15]
+    if kind == "date":
+        for op, pat in DATE_OPS:
+            if re.search(r"\b" + pat + r"\s*$", before, re.I):
+                return op
+        return None
     for op, pat in OPS_BEFORE:
         if re.search(pat + r"\s*$", before, re.I):
             return op
@@ -113,8 +120,8 @@ def parse(text):
         taken.append((s, e))
         v["span"] = (s, e)
         v["approx"] = bool(APPROX_BEFORE.search(text[max(0, s - 25):s]) or APPROX_AFTER.search(text[e:e + 12]))
-        if v["kind"] not in ("name", "boolean", "version"):
-            op = _op(text, s, e)
+        if v["kind"] not in ("name", "boolean", "version") and not v.get("op"):
+            op = _op(text, s, e, v["kind"])
             if op:
                 v["op"] = op
         out.append(v)
@@ -211,25 +218,60 @@ def parse(text):
             continue
         if unit:
             add({"kind": "quantity", "value": scaled(m.group(1), None), "unit": unit}, *m.span())
-    # counted nouns
-    for m in re.finditer(rf"\b({NUM})({SCALE})(\+)?\s+((?:[A-Za-z][\w-]*\s+){{0,2}}?)([A-Za-z][A-Za-z-]+)\b", text, re.I):
+    # counted nouns: the noun is one of the (up to three) words after the number
+    for m in re.finditer(rf"\b({NUM})({SCALE})(\+)?(?=\s+[A-Za-z])", text, re.I):
         n = m.group(1)
         if re.fullmatch(r"(19|20)\d\d", n):
             continue
-        noun = m.group(5)
-        mid = m.group(4).split()
-        if noun.lower() in NOUN_STOP or any(w.lower() in NOUN_STOP - {"of"} for w in mid):
-            # allow "10,000 of our customers"
-            if not (mid and mid[0].lower() == "of"):
+        tail = re.match(r"((?:\s+[A-Za-z][\w-]*){1,3})", text[m.end():])
+        toks = re.findall(r"[A-Za-z][\w-]*", tail.group(1)) if tail else []
+        cands, end = [], m.end()
+        pos = m.end()
+        for i, w in enumerate(toks):
+            pos = text.index(w, pos) + len(w)
+            if i == 0 and w.lower() in NOUN_STOP and w.lower() != "of":
+                break
+            if w.lower() in NOUN_STOP:
+                if cands:
+                    break
                 continue
-        words = [w for w in mid if w.lower() not in NOUN_STOP] + [noun]
-        v = {"kind": "quantity", "value": scaled(n, m.group(2) or None), "unit": singular(words[0])}
-        v["alt_units"] = [singular(w) for w in words]
-        add(v, *m.span())
-    for m in re.finditer(r"\b(?:in|founded in|since|from|by|until)\s+((?:19|20)\d\d)\b", text):
+            cands.append(singular(w))
+            end = pos
+        if not cands:
+            continue
+        v = {"kind": "quantity", "value": scaled(n, m.group(2) or None), "unit": cands[0], "alt_units": cands}
+        if m.group(3):
+            v["op"] = "ge"
+        add(v, m.start(), end)
+    for m in re.finditer(r"\b(?:in|founded in|since|from|by|until|before|after)\s+((?:19|20)\d\d)\b(?![-/])", text):
         add({"kind": "date", "value": m.group(1)}, m.start(1), m.end(1))
     out.sort(key=lambda v: v["span"])
-    return out
+    return _drop_unread(text, out)
+
+
+RANGE_GAP = re.compile(r"^\s*(?:–|-|to)\s*$")
+BARE_BEFORE = re.compile(r"(?<![\w.,])\d+(?:\.\d+)?\s*(?:–|-|to|or)\s*$")
+
+
+def _drop_unread(text, vals):
+    """Values value-forms.md says read as nothing: after a negation, or one end of a range."""
+    drop = set()
+    for i, v in enumerate(vals):
+        s, e = v["span"]
+        clause = re.sub(r"\b(?:no|not) (?:more|less|fewer|later|earlier) than\b", "", text[:s], flags=re.I)
+        if v["kind"] not in ("boolean",) and negated(clause + " ", len(clause)):
+            drop.add(i)
+        if BARE_BEFORE.search(text[max(0, s - 12):s]):
+            drop.add(i)
+        if re.search(r"\bbetween\s*$", text[max(0, s - 10):s], re.I):
+            drop.add(i)
+            if i + 1 < len(vals) and re.match(r"^\s*and\s*$", text[e:vals[i + 1]["span"][0]]):
+                drop.add(i + 1)
+        if i + 1 < len(vals) and RANGE_GAP.match(text[e:vals[i + 1]["span"][0]]):
+            drop.update((i, i + 1))
+        if re.search(r"\bbetween\s+\S+\s+and\s*$", text[max(0, s - 30):s], re.I):
+            drop.add(i)
+    return [v for i, v in enumerate(vals) if i not in drop]
 
 
 def negated(text, pos=None):
