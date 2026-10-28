@@ -40,9 +40,26 @@ def load_models():
     return ext, bundle["clf"]
 
 
+def page_order(rows):
+    """Rows in page order. File order if it already groups pages (neighbours share dates);
+    otherwise id order (p-12 before p-13), whichever groups dates better."""
+    import re
+
+    def cohesion(rs):
+        return sum(a["date"] == b["date"] for a, b in zip(rs, rs[1:])) / max(1, len(rs) - 1)
+
+    def id_key(r):
+        m = re.match(r"^(.*?)(\d+)$", r["id"])
+        return (m.group(1), int(m.group(2))) if m else (r["id"], 0)
+
+    by_id = sorted(rows, key=id_key)
+    return by_id if cohesion(by_id) > cohesion(rows) + 0.1 else rows
+
+
 def label_rows(rows, lexicon, practice, ext, clf, on_progress=None):
     """Label every row with an empty label. Returns ({id: (label, conf, reasons, p_false)}, historian, facts)."""
     lex = Lexicon(lexicon)
+    rows = page_order(rows)
     gold = {(norm(r["text"]), r["date"]): r for r in practice}
     facts = extract_rows(rows, lex, ext)
     hist = Historian()
