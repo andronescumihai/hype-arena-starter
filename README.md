@@ -39,10 +39,12 @@ Labels are hidden fold by fold (out-of-fold cross-validation over 1,897 rows):
 | --- | --- |
 | Calling everything true (baseline) | 83.3% |
 | **Hype or Truth Arena**, with labelled neighbours | **86.0%** |
-| **Hype or Truth Arena**, unlabelled votes only | 84.3% |
+| **Hype or Truth Arena**, unlabelled votes only | 84.4% |
 | The same pipeline with perfect fact extraction (ceiling) | 88.8% |
 
-**Claims back-test.** We write claims from 80% of the practice rows and check them against all the rows, five times over. Of 5,000 claims, **99.2% are confirmed**, 4 are contradicted (each one a fact whose value changed after the last sighting the Writer saw), and the rest can't be checked either way. Run it with `python -m arena.backtest`.
+**Claims back-test.** We write claims from 80% of the practice rows and check them against all the rows, five times over. Of 5,000 claims, **99.2% are confirmed**, 5 are contradicted (each one a fact whose value changed after the last sighting the Writer saw), and the rest can't be checked either way. Run it with `python -m arena.backtest`.
+
+**Parser tests.** `contracts/value-forms.md` says every example on it is a test. All 124 of them read exactly as the spec says, including ranges, negations, approximations and comparison words. Run them with `python -m tests.test_values`.
 
 The evaluation universe holds about 20,000 rows, so each fact has ten times more sources, and those sources are what the Historian works from. A run over 19,000 rows takes about 30 seconds on 2 CPUs.
 
