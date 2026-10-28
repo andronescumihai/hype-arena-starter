@@ -5,6 +5,7 @@ import StrokeText from './bits/StrokeText.jsx';
 import SlingButton from './bits/SlingButton.jsx';
 import Architecture from './Architecture.jsx';
 import Timeline from './Timeline.jsx';
+import JudgeFlow, { routeOf } from './JudgeFlow.jsx';
 
 const ORDER = ['extractor', 'historian', 'judge', 'writer', 'referee'];
 const TYPE_NAMES = { fact: 'Fact', compare: 'Compare', change: 'Change', at_event: 'At an event', relation: 'Relation' };
@@ -221,6 +222,8 @@ export default function App() {
         <aside className="arch-col glass">
           <h2>How it decides</h2>
           <Architecture active={active} done={done} />
+          <h3 className="flow-title">Step 3, up close: how the Judge decides</h3>
+          <JudgeFlow route={routeOf(rows.find(r => r.id === openId))} />
           <ol className="stage-notes">
             {ORDER.filter(a => notes[a]).map(a => (
               <li key={a} className={active === a ? 'now' : ''}><b>{a[0].toUpperCase() + a.slice(1)}</b> {notes[a]}</li>

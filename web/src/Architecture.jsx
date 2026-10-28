@@ -1,10 +1,10 @@
 // The system's architecture as a live diagram: each agent lights up while it works.
 const NODES = [
-  { id: 'extractor', x: 40, y: 40, title: 'Extractor', line: 'Reads facts from each sentence' },
-  { id: 'historian', x: 40, y: 150, title: 'Historian', line: 'One timeline per fact' },
-  { id: 'judge', x: 40, y: 260, title: 'Judge', line: 'Stale, premature or hype?' },
-  { id: 'writer', x: 250, y: 150, title: 'Writer', line: 'Claims from what holds' },
-  { id: 'referee', x: 250, y: 260, title: 'Referee', line: 'Re-reads, drops the unsafe' },
+  { id: 'extractor', x: 40, y: 40, title: '1  Extractor', line: 'Reads facts from each sentence' },
+  { id: 'historian', x: 40, y: 150, title: '2  Historian', line: 'One timeline per fact' },
+  { id: 'judge', x: 40, y: 260, title: '3  Judge', line: 'Stale, premature or hype?' },
+  { id: 'writer', x: 250, y: 150, title: '4  Writer', line: 'Claims from what holds' },
+  { id: 'referee', x: 250, y: 260, title: '5  Referee', line: 'Re-reads, drops the unsafe' },
 ];
 const EDGES = [
   ['extractor', 'historian'],
@@ -49,8 +49,8 @@ export default function Architecture({ active, done }) {
         })}
       </svg>
       <figcaption>
-        No language model runs here. Every verdict comes from parsed values, timelines and a small tree model
-        trained on the practice rows.
+        No language model, no pretrained model, no outside service. Every step is our own code. The only
+        learned part is a small tree model we train from scratch on the practice rows, in seconds.
       </figcaption>
     </figure>
   );

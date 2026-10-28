@@ -94,6 +94,25 @@ button, label.neu { font: inherit; color: inherit; }
 .arch-edge.lit { stroke: var(--violet); color: var(--violet); stroke-dasharray: 6 5; animation: flow 1s linear infinite; }
 .arch-input { fill: var(--mist); font: 500 11px var(--body); }
 @keyframes flow { to { stroke-dashoffset: -22; } }
+.flow-title { font-size: 0.95rem; margin: 22px 0 8px; }
+.flow { margin: 0; }
+.flow svg { width: 100%; height: auto; }
+.flow figcaption { color: var(--mist); font-size: 0.82rem; margin-top: 6px; }
+.fq { fill: #120d1c; stroke: rgba(255, 255, 255, 0.12); transition: all 0.3s ease; }
+.fq.lit { stroke: var(--violet); fill: #24133d; }
+.fq.score { stroke-dasharray: 4 4; }
+.fq-text { fill: var(--frost); font: 600 12.5px var(--body); }
+.fe { stroke: rgba(255, 255, 255, 0.22); stroke-width: 1.6; fill: none; transition: stroke 0.3s ease; }
+.fe.lit { stroke: var(--violet); stroke-width: 2.4; }
+.fe-label { fill: var(--mist); font: 500 11px var(--body); }
+.fo rect { fill: #0f0b18; stroke: rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
+.fo-text { fill: var(--mist); font: 500 10.5px var(--body); }
+.fo-title { fill: var(--frost); font: 700 12.5px var(--display); }
+.fo.lit rect { stroke: var(--lilac); fill: #1d1430; }
+.fo.lit .fe { stroke: var(--violet); }
+.fo.good.lit rect { stroke: var(--truth); filter: drop-shadow(0 0 10px rgba(110, 231, 183, 0.4)); }
+.fo.bad.lit rect { stroke: var(--hype); filter: drop-shadow(0 0 10px rgba(251, 113, 133, 0.45)); }
+.fo.bad .fo-title { fill: var(--hype); }
 .stage-notes { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 6px; font-size: 0.88rem; color: var(--mist); }
 .stage-notes b { color: var(--frost); margin-right: 0.35em; }
 .stage-notes .now b { color: var(--lilac); }
