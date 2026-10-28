@@ -1,0 +1,8 @@
+.git
+web/node_modules
+web/.next
+**/__pycache__
+models
+INSTRUCTIUNI.md
+CRITERII.md
+.claude
