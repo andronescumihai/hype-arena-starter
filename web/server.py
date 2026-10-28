@@ -36,9 +36,24 @@ def show(c):
     """A canonical value, as a person reads it."""
     k = c[0]
     if k == "quantity":
-        n = c[2]
+        n, unit = c[2], c[1]
+        if unit == "B":
+            for u, f in (("TB", 1e12), ("GB", 1e9), ("MB", 1e6), ("KB", 1e3)):
+                if n >= f:
+                    n, unit = n / f, u
+                    break
+        elif unit == "m" and n < 1:
+            n, unit = n / 0.0254, "inch"
+        elif unit == "g" and n >= 1000:
+            n, unit = n / 1000, "kg"
+        elif unit == "Hz":
+            for u, f in (("GHz", 1e9), ("MHz", 1e6), ("kHz", 1e3)):
+                if n >= f:
+                    n, unit = n / f, u
+                    break
+        n = round(n, 2)
         n = int(n) if float(n).is_integer() else n
-        return f"{n:,} {c[1]}" if isinstance(n, int) else f"{n} {c[1]}"
+        return f"{n:,} {unit}"
     if k == "money":
         sym = {"EUR": "€", "USD": "$", "GBP": "£"}.get(c[1], c[1] + " ")
         n = c[3]

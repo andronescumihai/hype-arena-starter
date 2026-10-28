@@ -168,7 +168,7 @@ export default function App() {
         <div className="title" role="heading" aria-level="1" aria-label="Hype or Truth">
           <ParticleText text="Hype or Truth" particleSize={2} density={4} color="#F4F2FF"
             highlightColor="#A855F7" scatter={180} gatherDuration={1600} stagger={420} pointerRepel={40}
-            repelRadius={120} idleDrift={0.7} trigger="mount" fontSize="clamp(2.6rem, 9vw, 7.5rem)"
+            repelRadius={120} idleDrift={0.7} trigger="mount" fontSize="clamp(3.2rem, 11vw, 7.5rem)"
             fontWeight={800} fontFamily="Unbounded, sans-serif" glow />
         </div>
         <p className="lede">

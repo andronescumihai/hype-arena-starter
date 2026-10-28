@@ -167,6 +167,8 @@ button, label.neu { font: inherit; color: inherit; }
 .foot b { color: var(--frost); }
 
 @media (max-width: 900px) {
+  .title { height: 120px; margin-top: 28px; }
+  .brand { flex-wrap: wrap; }
   .arena { grid-template-columns: 1fr; }
   .arch-col { position: static; }
   .scoreboard { grid-template-columns: 1fr; }
