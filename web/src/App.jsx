@@ -77,8 +77,8 @@ export default function App() {
     loadSample();
   }, []);
 
-  function loadSample() {
-    fetch('/api/sample').then(r => r.json()).then(d => {
+  function loadSample(which = 'sample') {
+    fetch(which === 'sample' ? '/api/sample' : `/api/demo/${which}`).then(r => r.json()).then(d => {
       setSource(d.source);
       setCsv(toCsv(d.rows));
       window.__truth = Object.fromEntries(d.rows.map(r => [r.id, r.truth || '']));
@@ -180,10 +180,12 @@ export default function App() {
           <div className="console-top">
             <div>
               <h2>Rows to check</h2>
-              <p className="muted small">CSV with id, text and date. Loaded: {source || 'nothing yet'}</p>
+              <p className="muted small">CSV with id, text and date. Loaded: {source || 'nothing yet'}. Edit any row before you run.</p>
             </div>
             <div className="console-actions">
-              <button className="neu" onClick={loadSample}>Load sample</button>
+              <button className="neu" onClick={() => loadSample('sample')}>Official sample</button>
+              <button className="neu" onClick={() => loadSample('hype-hunt')}>Hype hunt</button>
+              <button className="neu" onClick={() => loadSample('write-your-own')}>Write your own</button>
               <label className="neu">
                 Upload CSV
                 <input type="file" accept=".csv,text/csv" onChange={onFile} hidden />

@@ -117,6 +117,14 @@ class Handler(SimpleHTTPRequestHandler):
                                    "claims_candidates": c["candidates"], "claims_dropped": c["dropped"]})
         if self.path == "/api/sample":
             return self.send_json(sample_rows())
+        if self.path.startswith("/api/demo/"):
+            name = os.path.basename(self.path.split("?")[0])
+            path = os.path.join(ROOT, "demo", name + ".csv")
+            if not os.path.exists(path):
+                return self.send_json({"error": "No such demo."}, 404)
+            rows = read_csv(path)
+            return self.send_json({"source": f"demo/{name}.csv", "rows": [
+                {"id": r["id"], "text": r["text"], "date": r["date"], "truth": r.get("label", "")} for r in rows]})
         if self.path.startswith("/api/claims"):
             c = get_claims()
             return self.send_json({"claims": c["claims"][:60], "total": len(c["claims"])})
