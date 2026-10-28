@@ -11,7 +11,7 @@ COPY run.py .
 COPY web/server.py ./web/server.py
 COPY web/dist ./web/dist
 # train the extractor statistics and the Judge's model at build time, from practice rows only
-RUN python -m arena.train && chmod -R a+rX /app
+RUN python -m arena.train && python -m arena.backtest && chmod -R a+rX /app
 USER 10001
 EXPOSE 8000
 CMD ["python", "/app/run.py"]

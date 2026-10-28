@@ -26,6 +26,9 @@ if not os.path.exists(os.path.join(MODELS, "judge.pkl")):
     train.main()
 EXT, CLF = load_models()
 METRICS = json.load(open(os.path.join(MODELS, "metrics.json")))
+BT = os.path.join(MODELS, "backtest.json")
+if os.path.exists(BT):
+    METRICS["backtest"] = json.load(open(BT))
 CLAIMS = None
 
 

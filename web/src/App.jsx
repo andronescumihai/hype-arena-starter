@@ -271,6 +271,11 @@ export default function App() {
             Tested on {meta.practice_rows.toLocaleString()} practice rows, labels hidden fold by fold:{' '}
             <b>{(meta.metrics.accuracy_with_anchors * 100).toFixed(1)}%</b> right, against{' '}
             {(meta.metrics.baseline_all_true * 100).toFixed(1)}% for calling everything true.
+            {meta.metrics.backtest && (
+              <> Claims written from 80% of the rows and checked against all of them:{' '}
+                <b>{(meta.metrics.backtest.confirmed / meta.metrics.backtest.claims * 100).toFixed(1)}%</b> confirmed,{' '}
+                {meta.metrics.backtest.contradicted} of {meta.metrics.backtest.claims.toLocaleString()} contradicted.</>
+            )}
           </p>
         )}
       </footer>

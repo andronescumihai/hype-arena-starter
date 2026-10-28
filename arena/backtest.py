@@ -60,6 +60,10 @@ def main():
             by_type[(c["type"], key)] += 1
     n = sum(tally.values())
     print({k: f"{v} ({v / n:.1%})" for k, v in tally.items()})
+    from .pipeline import MODELS
+    os.makedirs(MODELS, exist_ok=True)
+    with open(os.path.join(MODELS, "backtest.json"), "w") as f:
+        json.dump({"claims": n, **{k: tally[k] for k in ("confirmed", "contradicted", "unknown")}}, f)
     for t in ("change", "relation", "at_event", "fact", "compare"):
         conf = by_type[(t, "confirmed")]
         bad = by_type[(t, "contradicted")]
