@@ -47,12 +47,11 @@ def label_rows(rows, lexicon, practice, ext, clf, on_progress=None):
     facts = extract_rows(rows, lex, ext)
     hist = Historian()
     # practice rows the input does not hold still count as trusted evidence
-    in_input = set()
+    in_input = {g["id"] for r in rows if (g := gold.get((norm(r["text"]), r["date"])))}
     for r in rows:
         g = gold.get((norm(r["text"]), r["date"]))
         if r.get("label") and g:
             hist.add(r["id"], r["date"], json.loads(g["form"]), r["label"])
-            in_input.add(g["id"])
         else:
             hist.add(r["id"], r["date"], facts[r["id"]], r.get("label", ""))
     for g in practice:

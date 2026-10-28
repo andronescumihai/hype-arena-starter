@@ -9,6 +9,7 @@ Judge: a sentence is true when its value is the one holding on its date;
 false when it repeats a value the timeline has moved past (stale), or states a
 value no other source backs while sources agree on another (hype).
 """
+import math
 from collections import defaultdict
 from datetime import date as Date
 
@@ -110,7 +111,8 @@ def judge(historian, row_id, date_s, facts):
     reasons, verdicts = [], []
     for f in facts:
         v, key = f["value"], (f["subject"], f["attribute"])
-        agree = rival = 0.0
+        agree = rival = ratio = 0.0
+        roundness = 0
         if v.get("op") in ("gt", "lt"):
             vd, conf, why = "hype", 0.6, "states a bound (over / under) instead of an exact value"
         elif v.get("op"):
@@ -120,6 +122,11 @@ def judge(historian, row_id, date_s, facts):
             states, path, obs = historian.timeline(key)
             others = [o for o in obs if o[3] != row_id]
             held = path.get(t)
+            num = c[-1] if isinstance(c[-1], float) else None
+            if num is not None and held is not None and isinstance(held[-1], float) and held[-1] > 0 and num > 0:
+                ratio = math.log(num / held[-1])
+            if num is not None and num >= 10:
+                roundness = int(num % 10 == 0) + int(num % 100 == 0) + int(num % 1000 == 0)
             agree = sum(o[2] for o in others if o[2] > 0 and same(o[1], c) and abs(o[0] - t) <= 90)
             if not others:
                 vd, conf, why = "unknown", 0.55, "no other source states this fact"
@@ -141,7 +148,8 @@ def judge(historian, row_id, date_s, facts):
         verdicts.append((vd, conf))
         reasons.append({"subject": f["subject"], "attribute": f["attribute"], "value": v, "verdict": vd,
                         "confidence": round(conf, 2), "why": why,
-                        "agree": agree, "rival": rival, "score": f.get("score", 3.0)})
+                        "agree": agree, "rival": rival, "score": f.get("score", 3.0),
+                        "ratio": ratio, "round": roundness})
     falses = [c for vd, c in verdicts if vd == "false"]
     if falses:
         return "false", max(falses), reasons

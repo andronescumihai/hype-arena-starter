@@ -156,6 +156,9 @@ def extract_rows(rows, lex, model):
         vals = [v for v in parse(masked) if not v.get("approx")]
         mentioned = [m[2] for m in ms]
         subjects = list(dict.fromkeys(mentioned + context[::-1]))
+        global_search = not subjects
+        if global_search:
+            subjects = list(lex.subjects)
         ws = words(text)
         facts = []
         used_attr = set()
@@ -176,7 +179,7 @@ def extract_rows(rows, lex, model):
                     near = [abs(v["span"][0] - s) for s, e, ss in ms if ss == subj]
                     if near:
                         pos_bonus += 0.2 / (1 + min(near) / 20)
-                    pos_bonus -= 0.05 * si
+                    pos_bonus -= 0.05 * si if not global_search else 0.25
                     for a in lex.attributes(subj):
                         sf = model.slot_fit(a, sl)
                         if sf <= 0.05:
@@ -200,7 +203,7 @@ def extract_rows(rows, lex, model):
                         continue
                     wf = model.word_fit(a, ws)
                     known = nm in model.name_values.get(a, ())
-                    sc = wf + (0.6 if known else 0) + (0.3 if subj in mentioned else 0) - 0.05 * si
+                    sc = wf + (0.6 if known else 0) + (0.3 if subj in mentioned else 0) - (0.05 * si if not global_search else 0.3)
                     if best is None or sc > best[0]:
                         best = (sc, subj, a)
             if best and best[0] > 0.9 and not negated(text, s):
@@ -210,13 +213,13 @@ def extract_rows(rows, lex, model):
         # yes / no: attribute words present in the sentence
         if not facts:
             best = None
-            for si, subj in enumerate(subjects[:3]):
+            for si, subj in enumerate(subjects[:3] if not global_search else subjects):
                 for a in lex.attributes(subj):
                     if model.slot_fit(a, ("boolean",)) < 0.5:
                         continue
                     aw = set(attr_words(a))
                     ov = len(aw & set(ws)) / max(1, len(aw))
-                    sc = ov + model.word_fit(a, ws) * 0.3 + (0.2 if subj in mentioned else 0) - 0.05 * si
+                    sc = ov + model.word_fit(a, ws) * 0.3 + (0.2 if subj in mentioned else 0) - (0.05 * si if not global_search else 0.25)
                     if best is None or sc > best[0]:
                         best = (sc, subj, a)
             if best and best[0] > 0.6:

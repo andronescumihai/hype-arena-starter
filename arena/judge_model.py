@@ -34,6 +34,9 @@ def features(text, reasons):
     x["max_agree"] = max([r["agree"] for r in fs], default=0)
     x["min_score"] = min([r["score"] for r in fs], default=0)
     x["false_score"] = max([r["score"] for r in fs if r["verdict"] == "false"], default=0)
+    x["max_ratio"] = max([r.get("ratio", 0) for r in fs], default=0)
+    x["min_ratio"] = min([r.get("ratio", 0) for r in fs], default=0)
+    x["max_round"] = max([r.get("round", 0) for r in fs], default=0)
     x["max_conf_false"] = max([r["confidence"] for r in fs if r["verdict"] == "false"], default=0)
     for k, pat in CUES.items():
         x["c_" + k] = int(bool(re.search(pat, text, re.I if k not in ("first_person",) else 0)))
