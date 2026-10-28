@@ -148,7 +148,14 @@ export default function App() {
     const scored = rows.filter(r => r.truth === 'true' || r.truth === 'false');
     const right = scored.filter(r => r.truth === r.label).length;
     const avg = rows.length ? rows.reduce((s, r) => s + r.confidence, 0) / rows.length : 0;
-    return { t, f, scored: scored.length, right, avg };
+    const kinds = { stale: 0, premature: 0, hype: 0, bound: 0 };
+    rows.filter(r => r.label === 'false').forEach(r => {
+      const w = r.facts.map(x => x.why).join(' ');
+      const k = w.includes('stale') ? 'stale' : w.includes('premature') ? 'premature'
+        : w.includes('bound') ? 'bound' : 'hype';
+      kinds[k] += 1;
+    });
+    return { t, f, scored: scored.length, right, avg, kinds };
   }, [rows]);
 
   return (
@@ -235,6 +242,14 @@ export default function App() {
               <div><dt>Mean confidence</dt><dd>{rows.length ? `${Math.round(stats.avg * 100)}%` : '–'}</dd></div>
               <div><dt>Run time</dt><dd>{summary ? `${summary.seconds}s` : '–'}</dd></div>
             </dl>
+            {stats.f > 0 && (
+              <ul className="kinds" aria-label="Why sentences were ruled false">
+                <li><b>{stats.kinds.stale}</b> stale <span>the value had already changed</span></li>
+                <li><b>{stats.kinds.premature}</b> premature <span>true only later</span></li>
+                <li><b>{stats.kinds.hype}</b> hype <span>no source backs it</span></li>
+                <li><b>{stats.kinds.bound}</b> bound <span>“over 5,000” instead of a number</span></li>
+              </ul>
+            )}
             {summary && stats.scored > 0 && <p className="muted small">Right against the known labels of these rows.</p>}
           </div>
 

@@ -105,6 +105,10 @@ button, label.neu { font: inherit; color: inherit; }
 .scoreboard dt { color: var(--mist); font-size: 0.8rem; }
 .scoreboard dd { margin: 0; font: 700 1.35rem var(--display); }
 .scoreboard > p { grid-column: 1 / -1; margin: 0; }
+.kinds { grid-column: 1 / -1; list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.kinds li { padding: 10px 12px; border-radius: 14px; background: #0f0b18; box-shadow: inset 3px 3px 7px rgba(0, 0, 0, 0.6), inset -2px -2px 6px rgba(168, 85, 247, 0.08); font-size: 0.86rem; }
+.kinds b { font: 700 1.1rem var(--display); color: var(--hype); margin-right: 0.3em; }
+.kinds span { display: block; color: var(--mist); font-size: 0.76rem; }
 .c-true { color: var(--truth); }
 .c-false { color: var(--hype); }
 .empty { color: var(--mist); text-align: center; padding: 30px 0; }
@@ -172,7 +176,7 @@ button, label.neu { font: inherit; color: inherit; }
   .arena { grid-template-columns: 1fr; }
   .arch-col { position: static; }
   .scoreboard { grid-template-columns: 1fr; }
-  .scoreboard dl { grid-template-columns: repeat(2, 1fr); }
+  .scoreboard dl, .kinds { grid-template-columns: repeat(2, 1fr); }
   .row-head { grid-template-columns: 1fr; gap: 8px; }
   .truth-note { margin-left: 18px; }
   .claim-list li { grid-template-columns: 1fr; gap: 4px; }
