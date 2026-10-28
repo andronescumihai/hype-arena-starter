@@ -38,8 +38,8 @@ Labels are hidden fold by fold (out-of-fold cross-validation over 1,897 rows):
 | | Accuracy |
 | --- | --- |
 | Calling everything true (baseline) | 83.3% |
-| **Hype or Truth Arena**, with labelled neighbours | **85.5%** |
-| **Hype or Truth Arena**, unlabelled votes only | 83.9% |
+| **Hype or Truth Arena**, with labelled neighbours | **86.0%** |
+| **Hype or Truth Arena**, unlabelled votes only | 84.3% |
 | The same pipeline with perfect fact extraction (ceiling) | 88.8% |
 
 **Claims back-test.** We write claims from 80% of the practice rows and check them against all the rows, five times over. Of 5,000 claims, **99.2% are confirmed**, 4 are contradicted (each one a fact whose value changed after the last sighting the Writer saw), and the rest can't be checked either way. Run it with `python -m arena.backtest`.

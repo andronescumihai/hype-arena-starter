@@ -9,7 +9,7 @@ import pickle
 
 from .extract import Lexicon, Model, extract_rows
 from .verify import Historian, judge
-from .judge_model import features
+from .judge_model import features, add_page_features
 from . import judge_model
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -58,14 +58,17 @@ def label_rows(rows, lexicon, practice, ext, clf, on_progress=None):
         if g["id"] not in in_input:
             hist.add("practice:" + g["id"], g["date"], json.loads(g["form"]), g["label"])
     out = {}
-    todo = [r for r in rows if not r.get("label")]
-    feats, metas = [], []
-    for i, r in enumerate(todo):
+    all_feats, all_metas = [], []
+    for i, r in enumerate(rows):
         lab, conf, reasons = judge(hist, r["id"], r["date"], facts[r["id"]])
-        feats.append(features(r["text"], reasons))
-        metas.append((r, lab, conf, reasons))
-        if on_progress and i % 500 == 0:
-            on_progress(i, len(todo))
+        all_feats.append(features(r["text"], reasons))
+        all_metas.append((r, lab, conf, reasons))
+        if on_progress and i % 2000 == 0:
+            on_progress(i, len(rows))
+    add_page_features(rows, all_feats, [not r.get("label") for r in rows])
+    keep = [i for i, r in enumerate(rows) if not r.get("label")]
+    feats = [all_feats[i] for i in keep]
+    metas = [all_metas[i] for i in keep]
     probs = clf.predict_proba(judge_model.vectorize(feats))[:, 1] if feats else []
     for (r, lab, conf, reasons), p in zip(metas, probs):
         p = float(p)

@@ -50,6 +50,26 @@ def features(text, reasons):
     return x
 
 
+def add_page_features(rows, feats, usable=None):
+    """Pages that lie tend to lie more than once: add what the rest of the page looks like.
+
+    rows and feats are aligned and in input order; a page is a run of rows sharing a date.
+    """
+    start = 0
+    for i in range(1, len(rows) + 1):
+        if i == len(rows) or rows[i]["date"] != rows[start]["date"]:
+            page = range(start, i)
+            for j in page:
+                others = [feats[k] for k in page if k != j and (usable is None or usable[k])]
+                n = len(others)
+                feats[j]["page_size"] = n
+                feats[j]["page_false"] = sum(o["v_false"] > 0 for o in others) / n if n else 0
+                feats[j]["page_hype"] = sum(o["w_hype"] > 0 for o in others) / n if n else 0
+                feats[j]["page_first_person"] = sum(o["c_first_person"] for o in others) / n if n else 0
+            start = i
+    return feats
+
+
 FEATURES = None
 
 

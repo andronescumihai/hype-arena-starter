@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from .extract import Lexicon, Model, extract_rows
-from .judge_model import features, vectorize
+from .judge_model import features, vectorize, add_page_features
 from .pipeline import load_practice, MODELS, ROOT
 from .verify import Historian, judge
 
@@ -29,10 +29,16 @@ def oof_features(rows, lex, folds=5, anchors=True):
                 h.add(r["id"], r["date"], ex[r["id"]], "")
             else:
                 h.add(r["id"], r["date"], json.loads(r["form"]), r["label"])
+        fold_feats = []
+        for r in rows:
+            # every row gets rule-level features (needed for its page neighbours); keep the hidden ones
+            _, _, reasons = judge(h, r["id"], r["date"], ex[r["id"]] if r["id"] in hidden else ex[r["id"]])
+            fold_feats.append(features(r["text"], reasons))
+        # with anchors, a labelled neighbour's verdict leaks its label: only unlabelled neighbours count
+        add_page_features(rows, fold_feats, None if not anchors else [r["id"] in hidden for r in rows])
         for i, r in enumerate(rows):
             if r["id"] in hidden:
-                _, _, reasons = judge(h, r["id"], r["date"], ex[r["id"]])
-                X[i] = features(r["text"], reasons)
+                X[i] = fold_feats[i]
     return X
 
 
