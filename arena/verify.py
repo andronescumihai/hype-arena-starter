@@ -145,11 +145,23 @@ def judge(historian, row_id, date_s, facts):
                     why = ("stale: the value had moved on by this date" if earlier else
                            "premature: this value only holds later" if later else
                            "hype: no source backs this value, others agree on another")
+        explained = 0
+        if vd == "false" and f.get("alts"):
+            # the Challenger's check: could the Extractor have misread this value?
+            for alt in f["alts"]:
+                st, pa, ob = historian.timeline((alt["subject"], alt["attribute"]))
+                h2 = pa.get(t)
+                if h2 is not None and same(h2, canon(alt["value"])) and \
+                        any(o[3] != row_id and same(o[1], h2) for o in ob):
+                    explained = 1
+                    vd, conf = "true", 0.6
+                    why = f"read as {alt['attribute'].replace('_', ' ')} of {alt['subject']}, it matches the timeline"
+                    break
         verdicts.append((vd, conf))
         reasons.append({"subject": f["subject"], "attribute": f["attribute"], "value": v, "verdict": vd,
                         "confidence": round(conf, 2), "why": why,
                         "agree": agree, "rival": rival, "score": f.get("score", 3.0),
-                        "ratio": ratio, "round": roundness})
+                        "ratio": ratio, "round": roundness, "explained": explained})
     falses = [c for vd, c in verdicts if vd == "false"]
     if falses:
         return "false", max(falses), reasons

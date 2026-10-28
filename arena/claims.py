@@ -101,8 +101,13 @@ def attr_phrase(attr):
     return " ".join(up.get(w, w) for w in ws)
 
 
+NAME_WORDS = set()
+
+
 def safe_words(phrase):
     ws = phrase.lower().split()
+    if any(re.search(r"(?<![\w])" + re.escape(n) + r"(?![\w])", phrase.lower()) for n in NAME_WORDS):
+        return False
     return not any(w in TIME_WORDS for w in ws) and not re.search(r"\d", phrase) and not NEGATION.search(phrase)
 
 
@@ -135,6 +140,13 @@ class Knowledge:
             for a in s.get("aliases", []):
                 self.names.add(a.lower())
         self.events = lexicon.get("events", [])
+        NAME_WORDS.clear()
+        NAME_WORDS.update(self.names)
+
+    def add_texts(self, rows):
+        """Input rows a claim must not copy."""
+        for r in rows:
+            self.texts.add(" ".join(r["text"].lower().split()).rstrip(".!? "))
 
     def segments(self, key):
         """[(value, first_day, last_day)] in order; None if the anchors flip back and forth."""
@@ -160,7 +172,7 @@ class Knowledge:
         n = sum(1 for t, _ in self.anchors[key] if t >= first)
         static = len(segs) == 1
         age = ASOF - last
-        safety = 0.6 + 0.08 * min(n, 4) + (0.1 if static else 0) - min(0.25, age / 900)
+        safety = 0.6 + 0.08 * min(n, 4) + (0.1 if static else 0) - min(0.35, age / 300)
         if v["kind"] == "date" and key[1] in ("joined", "founded", "date", "launched") and static:
             safety += 0.1
         return v, min(0.97, safety)
@@ -180,9 +192,25 @@ def mentions_exact(text, name):
     return re.search(r"(?<![\w])" + re.escape(name) + r"(?![\w])", text, re.I) is not None
 
 
+def lexicon_ok(form, typ, k):
+    attrs = {x["name"]: set(x["attributes"]) for x in k.lex["subjects"]}
+    facts = []
+    if typ == "compare":
+        facts = [(form["left"]["subject"], form["left"]["attribute"]), (form["right"]["subject"], form["right"]["attribute"])]
+    elif typ == "relation":
+        facts = [(form["subject"], form["link"]), (form["target"], form["attribute"])]
+    else:
+        facts = [(form["subject"], form["attribute"])]
+    if typ == "at_event" and form["event"] not in k.events:
+        return False
+    return all(a in attrs.get(s_, ()) for s_, a in facts)
+
+
 def referee(c, k):
     """Internal check of one claim against the forms the referee reads. Returns reason or None."""
     text, form, typ = c["text"], c["form"], c["type"]
+    if not lexicon_ok(form, typ, k):
+        return "not in this lexicon"
     if len(text) > 300 or " ".join(text.lower().split()).rstrip(".!? ") in k.texts:
         return "length or copy"
     sent = text  # every template is one sentence
@@ -253,7 +281,8 @@ def write_claims(k, n=1000, veto=None):
         if not segs or len(segs) < 2:
             continue
         subj, attr = key
-        for (a, _, _), (b, _, _) in zip(segs, segs[1:]):
+        pairs = [(segs[i], segs[j], j == i + 1) for i in range(len(segs)) for j in range(i + 1, len(segs))]
+        for (a, _, _), (b, _, _), adjacent in pairs:
             if a["kind"] in ("boolean",) or a["kind"] != b["kind"]:
                 continue
             ra, rb = render(a), render(b)
@@ -261,7 +290,8 @@ def write_claims(k, n=1000, veto=None):
             if not ra or not rb or not safe_words(ap):
                 continue
             text = f"At {subj}, the {ap} went from {ra} to {rb}."
-            add("change", text, {"subject": subj, "attribute": attr, "from": a, "to": b}, 0.93, "change")
+            add("change", text, {"subject": subj, "attribute": attr, "from": a, "to": b},
+                0.93 if adjacent else 0.91, "change")
 
     # relation: a fact of whoever a link names
     for key, anchors in k.anchors.items():

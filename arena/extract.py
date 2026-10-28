@@ -169,6 +169,7 @@ def extract_rows(rows, lex, model):
                 name_cands.append((m.start(), m.end(), nm))
         for v in vals:
             best = None
+            cands = []
             units = v.get("alt_units") or [v.get("unit")]
             for ui, u in enumerate(units):
                 vv = dict(v, unit=u) if v["kind"] == "quantity" else v
@@ -185,13 +186,18 @@ def extract_rows(rows, lex, model):
                         if sf <= 0.05:
                             continue
                         sc = 2 * sf + model.word_fit(a, ws) + pos_bonus - 0.1 * ui - (0.3 if a in used_attr else 0)
+                        cands.append((sc, subj, a, vv))
                         if best is None or sc > best[0]:
                             best = (sc, subj, a, vv)
             if best and best[0] > 0.9:
                 sc, subj, a, vv = best
                 used_attr.add((subj, a))
-                val = {k: x for k, x in vv.items() if k not in ("span", "approx", "alt_units")}
-                facts.append({"subject": subj, "attribute": a, "value": val, "score": round(sc, 3)})
+                clean = lambda x: {k: y for k, y in x.items() if k not in ("span", "approx", "alt_units")}
+                cands.sort(key=lambda c: -c[0])
+                alts = [{"subject": c[1], "attribute": c[2], "value": clean(c[3]), "score": round(c[0], 3)}
+                        for c in cands[1:6] if c[0] > sc - 0.8 and (c[1], c[2]) != (subj, a)][:3]
+                facts.append({"subject": subj, "attribute": a, "value": clean(vv), "score": round(sc, 3),
+                              "alts": alts})
         # names
         for s, e, nm in name_cands:
             best = None

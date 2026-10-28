@@ -46,6 +46,7 @@ def main():
     print(f"input: {len(rows)} rows, {sum(not r.get('label') for r in rows)} to label", flush=True)
 
     know = Knowledge(practice, lexicon)
+    know.add_texts(rows)
     claims, dropped, n = write_claims(know)
     write_table({}, claims, rows)
     print(f"fallback table written ({time.time() - t0:.1f}s); claims: {len(claims)} of {n} candidates, "
