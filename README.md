@@ -33,14 +33,22 @@ flowchart LR
 
 ## Results on the practice data
 
-Labels are hidden fold by fold (out-of-fold cross-validation over 1,897 rows):
+**Labels.** We test it the way the real run works: a fifth of the practice pages lose their labels, and the system is retrained on the other pages only, five times over (`python -m arena.evaluate`).
 
 | | Accuracy |
 | --- | --- |
 | Calling everything true (baseline) | 83.3% |
-| **Hype or Truth Arena**, with labelled neighbours | **86.0%** |
-| **Hype or Truth Arena**, unlabelled votes only | 84.4% |
+| **Hype or Truth Arena** | **86.1%** |
 | The same pipeline with perfect fact extraction (ceiling) | 88.8% |
+
+When it rules a sentence false, it's right 72% of the time. Its confidence means what it says:
+
+| Confidence it gives | Rows | Share it gets right |
+| --- | --- | --- |
+| 0.50–0.70 | 201 | 57% |
+| 0.70–0.85 | 302 | 75% |
+| 0.85–0.95 | 520 | 89% |
+| 0.95–1.00 | 874 | 95% |
 
 **Claims back-test.** We write claims from 80% of the practice rows and check them against all the rows, five times over. Of 5,000 claims, **99.2% are confirmed**, 5 are contradicted (each one a fact whose value changed after the last sighting the Writer saw), and the rest can't be checked either way. Run it with `python -m arena.backtest`.
 
